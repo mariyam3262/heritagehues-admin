@@ -146,26 +146,32 @@ export const deleteUser = (email) =>
   })
 
 
-  export const uploadProductPhotos = async (files) => {
+export const uploadProductPhotos = async (files) => {
   const formData = new FormData();
 
   files.forEach((file) => {
-    formData.append("photos", file); // IMPORTANT: key must match backend
+    formData.append("photos", file);
   });
 
-  const response = await fetch("/api/admin/uploads", {
+  const response = await fetch(`${API_BASE}/api/admin/uploads`, {
     method: "POST",
     body: formData,
-    // ❌ DO NOT manually set Content-Type
+    credentials: "include", // 🔥 important if using sessions/auth
   });
 
-  if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err.error || "Upload failed");
+  // 🔥 Safe response handling (no "Unexpected end of JSON")
+  let data = null;
+  try {
+    data = await response.json();
+  } catch (e) {
+    throw new Error("Server returned invalid response");
   }
 
-  const data = await response.json();
-  return data.photos;
+  if (!response.ok) {
+    throw new Error(data?.error || "Upload failed");
+  }
+
+  return data.photos || [];
 };
 
 // export const uploadProductPhotos = async (files) => {
