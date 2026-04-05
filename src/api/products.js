@@ -16,17 +16,25 @@ const setCsrfToken = (token) => {
   }
 }
 
-const buildHeaders = (customHeaders = {}) => {
-  const headers = { 'Content-Type': 'application/json', ...customHeaders }
-  const csrfToken = getCsrfToken()
-  if (csrfToken && !headers['X-CSRF-Token']) {
-    headers['X-CSRF-Token'] = csrfToken
+const buildHeaders = (customHeaders = {}, isFormData = false) => {
+  const headers = { ...customHeaders };
+
+  // ❌ Only set JSON header if NOT FormData
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
   }
+
+  const csrfToken = getCsrfToken();
+  if (csrfToken && !headers["X-CSRF-Token"]) {
+    headers["X-CSRF-Token"] = csrfToken;
+  }
+
   if (ADMIN_API_TOKEN) {
-    headers['X-Admin-Token'] = ADMIN_API_TOKEN
+    headers["X-Admin-Token"] = ADMIN_API_TOKEN;
   }
-  return headers
-}
+
+  return headers;
+};
 
 const request = async (path, options = {}) => {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -150,22 +158,21 @@ export const uploadProductPhotos = async (files) => {
   const formData = new FormData();
 
   files.forEach((file) => {
-    formData.append("photos", file);
+    formData.append("photos", file, file.name);
   });
 
   const response = await fetch(`${API_BASE}/api/admin/uploads`, {
     method: "POST",
     body: formData,
-    credentials: 'include',
-    headers: buildHeaders({}),
+    headers: buildHeaders({}, true), // 🔥 tell it it's FormData
+    credentials: "include",
   });
 
-  // 🔥 Safe response handling (no "Unexpected end of JSON")
-  let data = null;
+  let data;
   try {
     data = await response.json();
-  } catch (e) {
-    throw new Error("Server returned invalid response");
+  } catch {
+    throw new Error("Invalid server response");
   }
 
   if (!response.ok) {
@@ -174,6 +181,7 @@ export const uploadProductPhotos = async (files) => {
 
   return data.photos || [];
 };
+
 
 // export const uploadProductPhotos = async (files) => {
 //   const formData = new FormData()
