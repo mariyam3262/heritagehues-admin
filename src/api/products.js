@@ -156,6 +156,7 @@ export const uploadProductPhotos = async (files) => {
   const response = await fetch(`${API_BASE}/api/admin/uploads`, {
     method: "POST",
     body: formData,
+    credentials: 'include',
     headers: buildHeaders({}),
   });
 
