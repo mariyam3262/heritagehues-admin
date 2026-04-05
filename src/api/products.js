@@ -145,24 +145,47 @@ export const deleteUser = (email) =>
     method: 'DELETE',
   })
 
-export const uploadProductPhotos = async (files) => {
-  const formData = new FormData()
-  files.forEach((file) => formData.append('photos', file))
 
-  const response = await fetch(`${API_BASE}/api/admin/uploads`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: buildHeaders({}),
+  export const uploadProductPhotos = async (files) => {
+  const formData = new FormData();
+
+  files.forEach((file) => {
+    formData.append("photos", file); // IMPORTANT: key must match backend
+  });
+
+  const response = await fetch("/api/admin/uploads", {
+    method: "POST",
     body: formData,
-  })
-
-  const data = await response.json().catch(() => ({}))
+    // ❌ DO NOT manually set Content-Type
+  });
 
   if (!response.ok) {
-    throw new Error(data.error || 'Upload failed')
+    const err = await response.json();
+    throw new Error(err.error || "Upload failed");
   }
 
-  return Array.isArray(data.photos) ? data.photos : []
-}
+  const data = await response.json();
+  return data.photos;
+};
+
+// export const uploadProductPhotos = async (files) => {
+//   const formData = new FormData()
+//   files.forEach((file) => formData.append('photos', file))
+
+//   const response = await fetch(`${API_BASE}/api/admin/uploads`, {
+//     method: 'POST',
+//     credentials: 'include',
+//     headers: buildHeaders({}),
+//     body: formData,
+//   })
+
+//   const data = await response.json().catch(() => ({}))
+
+//   if (!response.ok) {
+//     throw new Error(data.error || 'Upload failed')
+//   }
+
+//   return Array.isArray(data.photos) ? data.photos : []
+// }
 
 export const clearAdminSessionState = () => setCsrfToken('')
