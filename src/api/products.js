@@ -156,7 +156,7 @@ export const uploadProductPhotos = async (files) => {
   const response = await fetch(`${API_BASE}/api/admin/uploads`, {
     method: "POST",
     body: formData,
-    credentials: "include", // 🔥 important if using sessions/auth
+    headers: buildHeaders({}),
   });
 
   // 🔥 Safe response handling (no "Unexpected end of JSON")
