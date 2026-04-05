@@ -1128,9 +1128,14 @@ const updatePricePreview = async () => {
 }
 
 const handlePhotoSelection = (event) => {
-  const files = Array.from(event.target.files || [])
-  selectedPhotoFiles.value = files.slice(0, 10)
-}
+  const files = event.target.files;
+
+  selectedPhotoFiles.value = [];
+
+  for (let i = 0; i < files.length && i < 10; i++) {
+    selectedPhotoFiles.value.push(files[i]); // 🔥 direct File object
+  }
+};
 
 const goToList = () => {
   window.location.hash = '/products'
