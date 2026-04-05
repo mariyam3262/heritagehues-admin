@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-export default defineConfig(({ command }) => ({
-  base: command === 'build' ? (process.env.VITE_APP_BASE || '/') : '/',
+export default defineConfig({
+  base: '/',   // ⭐ FORCE FIX
   plugins: [vue()],
   server: {
     port: 5174,
@@ -13,4 +13,4 @@ export default defineConfig(({ command }) => ({
       },
     },
   },
-}))
+})
