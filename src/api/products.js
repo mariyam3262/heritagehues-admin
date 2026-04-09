@@ -32,7 +32,7 @@ const normalizeAesKey = async (value) => {
   )
 }
 
-const encryptLoginPassword = async (password) => {
+async function encryptAdminPassword(password) {
   if (!password) return password
   if (!ADMIN_LOGIN_ENCRYPTION_KEY) {
     throw new Error('Missing VITE_ADMIN_LOGIN_ENCRYPTION_KEY for login encryption')
@@ -114,7 +114,7 @@ export const loginAdmin = async (payload) => {
   const loginPayload = { ...payload }
 
   if (Object.prototype.hasOwnProperty.call(loginPayload, 'password')) {
-    loginPayload.password_encrypted = await encryptLoginPassword(loginPayload.password)
+    loginPayload.password_encrypted = await encryptAdminPassword(loginPayload.password)
     delete loginPayload.password
   }
 
