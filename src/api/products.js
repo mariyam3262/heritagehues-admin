@@ -5,13 +5,13 @@ const ADMIN_CSRF_KEY = 'heritage_hues_admin_csrf'
 
 const textEncoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null
 
-const toBase64 = (bytes) => {
+const toBase64Url = (bytes) => {
   if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
     let binary = ''
     bytes.forEach((byte) => {
       binary += String.fromCharCode(byte)
     })
-    return window.btoa(binary)
+    return window.btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
   }
 
   return ''
@@ -49,10 +49,11 @@ const encryptLoginPassword = async (password) => {
     textEncoder.encode(String(password)),
   )
 
-  return JSON.stringify({
-    iv: toBase64(iv),
-    data: toBase64(new Uint8Array(encrypted)),
-  })
+  const combined = new Uint8Array(iv.length + encrypted.byteLength)
+  combined.set(iv, 0)
+  combined.set(new Uint8Array(encrypted), iv.length)
+
+  return toBase64Url(combined)
 }
 
 const getCsrfToken = () => {
@@ -113,7 +114,8 @@ export const loginAdmin = async (payload) => {
   const loginPayload = { ...payload }
 
   if (Object.prototype.hasOwnProperty.call(loginPayload, 'password')) {
-    loginPayload.password = await encryptLoginPassword(loginPayload.password)
+    loginPayload.password_encrypted = await encryptLoginPassword(loginPayload.password)
+    delete loginPayload.password
   }
 
   return request('/admin/login', {
