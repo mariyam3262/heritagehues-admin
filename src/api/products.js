@@ -1,6 +1,59 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5000' : '')
 const ADMIN_API_TOKEN = import.meta.env.VITE_ADMIN_API_TOKEN || ''
+const ADMIN_LOGIN_ENCRYPTION_KEY = import.meta.env.VITE_ADMIN_LOGIN_ENCRYPTION_KEY || ''
 const ADMIN_CSRF_KEY = 'heritage_hues_admin_csrf'
+
+const textEncoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null
+
+const toBase64 = (bytes) => {
+  if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
+    let binary = ''
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte)
+    })
+    return window.btoa(binary)
+  }
+
+  return ''
+}
+
+const normalizeAesKey = async (value) => {
+  if (!value || !textEncoder || !globalThis.crypto?.subtle) return null
+
+  const rawKey = textEncoder.encode(String(value))
+  const hashedKey = await globalThis.crypto.subtle.digest('SHA-256', rawKey)
+
+  return globalThis.crypto.subtle.importKey(
+    'raw',
+    hashedKey,
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt'],
+  )
+}
+
+const encryptLoginPassword = async (password) => {
+  if (!password) return password
+  if (!ADMIN_LOGIN_ENCRYPTION_KEY) {
+    throw new Error('Missing VITE_ADMIN_LOGIN_ENCRYPTION_KEY for login encryption')
+  }
+  if (!textEncoder || !globalThis.crypto?.getRandomValues || !globalThis.crypto?.subtle) {
+    throw new Error('This browser does not support login password encryption')
+  }
+
+  const key = await normalizeAesKey(ADMIN_LOGIN_ENCRYPTION_KEY)
+  const iv = globalThis.crypto.getRandomValues(new Uint8Array(12))
+  const encrypted = await globalThis.crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    textEncoder.encode(String(password)),
+  )
+
+  return JSON.stringify({
+    iv: toBase64(iv),
+    data: toBase64(new Uint8Array(encrypted)),
+  })
+}
 
 const getCsrfToken = () => {
   if (typeof window === 'undefined') return ''
@@ -56,11 +109,18 @@ const request = async (path, options = {}) => {
   return data
 }
 
-export const loginAdmin = (payload) =>
-  request('/admin/login', {
+export const loginAdmin = async (payload) => {
+  const loginPayload = { ...payload }
+
+  if (Object.prototype.hasOwnProperty.call(loginPayload, 'password')) {
+    loginPayload.password = await encryptLoginPassword(loginPayload.password)
+  }
+
+  return request('/admin/login', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify(loginPayload),
   })
+}
 
 export const logoutAdmin = () =>
   request('/admin/logout', {
