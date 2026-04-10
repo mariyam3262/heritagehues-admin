@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5000' : '')
+const API_BASE = import.meta.env.DEV
+  ? ''
+  : import.meta.env.VITE_API_BASE_URL || ''
 const ADMIN_API_TOKEN = import.meta.env.VITE_ADMIN_API_TOKEN || ''
 const ADMIN_LOGIN_ENCRYPTION_KEY = import.meta.env.VITE_ADMIN_LOGIN_ENCRYPTION_KEY || ''
 const ADMIN_CSRF_KEY = 'heritage_hues_admin_csrf'
